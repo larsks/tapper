@@ -1,0 +1,38 @@
+tippytap:
+  device:
+    name: "*K320"
+  options:
+    interval: 200
+  actions:
+    # Press left shift twice
+    - pattern: LEFTSHIFT LEFTSHIFT
+      command:
+        - zenity
+        - --info
+        - --text
+        - command1
+
+    # Press right shift, then left shift, then right shift, then left shift
+    - pattern: RIGHTSHIFT LEFTSHIFT RIGHTSHIFT LEFTSHIFT
+      command:
+        - zenity
+        - --info
+        - --text
+        - command2
+
+    # Press both the right and left shift keys together, twice
+    - pattern: RIGHTSHIFT|LEFTSHIFT RIGHTSHIFT|LEFTSHIFT
+      command:
+        - zenity
+        - --info
+        - --text
+        - command3
+
+    # Press right shift key three times while holding down the left
+    # shift key
+    - pattern: LEFTSHIFT|(RIGHTSHIFT RIGHTSHIFT RIGHTSHIFT)
+      command:
+        - zenity
+        - --info
+        - --text
+        - command4
