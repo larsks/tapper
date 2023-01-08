@@ -16,6 +16,7 @@ type (
 
 	App struct {
 		*TippyTapConfig
+		dev *evdev.InputDevice
 	}
 )
 
@@ -41,42 +42,71 @@ func NewApp(config *TippyTapConfig) *App {
 	}
 }
 
-func (app *App) GetDevice() (*evdev.InputDevice, error) {
+func (app *App) GetDevice() error {
+	var err error
+
 	if app.Device.Path != "" {
 		dev, err := evdev.Open(app.Device.Path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open device %s: %v", app.Device.Path, err)
+			return fmt.Errorf("failed to open device %s: %v", app.Device.Path, err)
 		}
 
-		return dev, nil
+		app.dev = dev
+		return nil
 	}
 
-	return findDeviceByName(app.Device.Name)
+	app.dev, err = findDeviceByName(app.Device.Name)
+	return err
 }
 
-func (app *App) KeyLoop() error {
-	dev, err := app.GetDevice()
+func (app *App) KeyEvents() chan *evdev.InputEvent {
+	events := make(chan *evdev.InputEvent)
+
+	go func() {
+		for {
+			evt, err := app.dev.ReadOne()
+			if err != nil {
+				panic(fmt.Errorf("failed to read event: %w", err))
+			}
+
+			if evt.Type == evdev.EV_KEY {
+				events <- evt
+			}
+		}
+	}()
+
+	return events
+}
+
+func (app *App) OpenDevice() error {
+	err := app.GetDevice()
 	if err != nil {
 		return fmt.Errorf("failed to get device path: %w", err)
 	}
-	log.Printf("using device %s\n", dev.Path())
+	log.Printf("using device %s\n", app.dev.Path())
+	return nil
+}
 
-	var seq Sequence
-	var cur, keysDown Chord
+func (app *App) KeyLoop() error {
+	events := app.KeyEvents()
+	timer := time.NewTimer(0)
+
 	lastEvent := time.Time{}
-
-	keysDown = make(Chord)
+	keysDown := make(Chord)
+	cur := make(Chord)
+	seq := Sequence{}
 
 	for {
-		evt, err := dev.ReadOne()
-		if err != nil {
-			return fmt.Errorf("failed to read event: %w", err)
-		}
-
-		if evt.Type == evdev.EV_KEY {
+		select {
+		case <-timer.C:
+			fmt.Printf("timer\n")
+		case evt := <-events:
 			now := time.Now()
 			elapsed := now.Sub(lastEvent)
+			lastEvent = now
+
 			if elapsed.Milliseconds() > app.Options.Interval {
+				fmt.Printf("reset! %d %d\n", elapsed.Milliseconds(), app.Options.Interval)
 				seq = Sequence{}
 				cur = make(Chord)
 			}
@@ -87,21 +117,22 @@ func (app *App) KeyLoop() error {
 				keysDown[evt.Code] = true
 			}
 
+			fmt.Printf("keysdown %v cur %+v seq %v\n",
+				keysDown, cur, seq)
+
+			// all keys have been released
 			if len(keysDown) == 0 {
 				if len(cur) > 0 {
 					seq = append(seq, cur)
+					timer.Reset(time.Duration(app.Options.Interval) * time.Millisecond)
+					fmt.Printf("seq %v\n", seq)
 				}
-				log.Printf("cur %+v seq %+v", cur, seq)
 				cur = make(Chord)
 			} else {
 				for key := range keysDown {
 					cur[key] = true
 				}
 			}
-
-			name := evdev.CodeName(evt.Type, evt.Code)
-			log.Printf("elapsed %d key %s %d keysDown %+v cur %+v", elapsed.Milliseconds(), name, evt.Value, keysDown, cur)
-			lastEvent = now
 		}
 	}
 }
@@ -139,8 +170,12 @@ func main() {
 		fmt.Printf("actions: %+v\n", config.Actions)
 	}
 
+	if err := app.OpenDevice(); err != nil {
+		log.Fatalf("ERROR: %v", err)
+	}
+
 	if err := app.KeyLoop(); err != nil {
-		log.Fatalf("%v", err)
+		log.Fatalf("ERROR: %v", err)
 	}
 }
 
