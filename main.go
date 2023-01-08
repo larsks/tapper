@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"tapper/patterns"
+	"tapper/version"
 	"time"
-	"tippytap/patterns"
-	"tippytap/version"
 
 	evdev "github.com/holoplot/go-evdev"
 	flag "github.com/spf13/pflag"
@@ -13,7 +13,7 @@ import (
 
 type (
 	App struct {
-		*TippyTapConfig
+		*TapperConfig
 		dev        *evdev.InputDevice
 		patternMap *patterns.Patterns
 		activeKeys patterns.Chord
@@ -27,16 +27,16 @@ var optVersion bool
 var optDebug bool
 
 func init() {
-	flag.StringVarP(&optConfigPath, "config", "f", "tippytap.yaml", "Path to configuration file")
+	flag.StringVarP(&optConfigPath, "config", "f", "tapper.yaml", "Path to configuration file")
 	flag.BoolVarP(&optDebug, "debug", "", false, "Show debug output")
 	flag.BoolVarP(&optListDevices, "list-devices", "L", false, "List available devices")
 	flag.BoolVarP(&optListKeys, "list-keys", "K", false, "List available keycodes")
 	flag.BoolVarP(&optVersion, "version", "v", false, "Show version")
 }
 
-func NewApp(config *TippyTapConfig) *App {
+func NewApp(config *TapperConfig) *App {
 	return &App{
-		TippyTapConfig: config,
+		TapperConfig: config,
 	}
 }
 

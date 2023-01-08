@@ -1,4 +1,4 @@
-TARGET = tippytap
+TARGET = tapper
 SRC = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
 VERSION = $(shell git describe --tags --exact-match 2> /dev/null || echo development)

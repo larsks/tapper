@@ -1,4 +1,4 @@
-module tippytap
+module tapper
 
 go 1.19
 

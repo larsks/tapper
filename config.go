@@ -8,10 +8,10 @@ import (
 
 type (
 	ConfigFile struct {
-		TippyTap *TippyTapConfig `yaml:"tippytap"`
+		Tapper *TapperConfig `yaml:"tapper"`
 	}
 
-	TippyTapConfig struct {
+	TapperConfig struct {
 		Options *Options
 		Device  *DeviceConfig
 		Actions []ActionConfig
@@ -32,7 +32,7 @@ type (
 	}
 )
 
-func ReadConfiguration(path string) (*TippyTapConfig, error) {
+func ReadConfiguration(path string) (*TapperConfig, error) {
 	var config ConfigFile
 
 	content, err := os.ReadFile(path)
@@ -44,5 +44,5 @@ func ReadConfiguration(path string) (*TippyTapConfig, error) {
 		return nil, err
 	}
 
-	return config.TippyTap, nil
+	return config.Tapper, nil
 }

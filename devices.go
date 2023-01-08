@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"tippytap/environ"
+	"tapper/environ"
 
 	evdev "github.com/holoplot/go-evdev"
 )
