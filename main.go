@@ -16,6 +16,7 @@ type (
 		*TippyTapConfig
 		dev        *evdev.InputDevice
 		patternMap *patterns.Patterns
+		activeKeys patterns.Chord
 	}
 )
 
@@ -69,7 +70,10 @@ func (app *App) KeyEvents() chan *evdev.InputEvent {
 			}
 
 			if evt.Type == evdev.EV_KEY {
-				events <- evt
+				_, ok := app.activeKeys[evt.Code]
+				if ok {
+					events <- evt
+				}
 			}
 		}
 	}()
@@ -88,6 +92,7 @@ func (app *App) OpenDevice() error {
 
 func (app *App) LoadPatterns() error {
 	app.patternMap = patterns.NewPatterns()
+	app.activeKeys = make(patterns.Chord)
 
 	for _, actionconf := range app.Actions {
 		seq := patterns.Sequence{}
@@ -97,6 +102,10 @@ func (app *App) LoadPatterns() error {
 				return fmt.Errorf("failed to read keys: %w", err)
 			}
 			seq = append(seq, chord)
+
+			for key := range chord {
+				app.activeKeys[key] = true
+			}
 		}
 		app.patternMap.AddSequence(seq, actionconf.Command)
 	}
