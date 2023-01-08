@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"tippytap/patterns"
 	"tippytap/version"
 
 	evdev "github.com/holoplot/go-evdev"
@@ -11,12 +12,10 @@ import (
 )
 
 type (
-	Chord    map[evdev.EvCode]bool
-	Sequence []Chord
-
 	App struct {
 		*TippyTapConfig
-		dev *evdev.InputDevice
+		dev        *evdev.InputDevice
+		patternMap *patterns.Patterns
 	}
 )
 
@@ -87,19 +86,49 @@ func (app *App) OpenDevice() error {
 	return nil
 }
 
+func (app *App) LoadPatterns() error {
+	app.patternMap = patterns.NewPatterns()
+
+	for _, actionconf := range app.Actions {
+		seq := patterns.Sequence{}
+		for _, keys := range actionconf.Pattern {
+			chord, err := patterns.ChordFromString(keys)
+			if err != nil {
+				return fmt.Errorf("failed to read keys: %w", err)
+			}
+			seq = append(seq, chord)
+		}
+		app.patternMap.AddSequence(seq, actionconf.Command)
+	}
+
+	return nil
+}
+
+func (app *App) Init() error {
+	if err := app.OpenDevice(); err != nil {
+		return err
+	}
+
+	if err := app.LoadPatterns(); err != nil {
+		return fmt.Errorf("failed to load patterns: %w", err)
+	}
+
+	return nil
+}
+
 func (app *App) KeyLoop() error {
 	events := app.KeyEvents()
 	timer := time.NewTimer(0)
 
 	lastEvent := time.Time{}
-	keysDown := make(Chord)
-	cur := make(Chord)
-	seq := Sequence{}
+	keysDown := make(patterns.Chord)
+	cur := make(patterns.Chord)
+	seq := patterns.Sequence{}
 
 	for {
 		select {
 		case <-timer.C:
-			fmt.Printf("timer\n")
+			fmt.Printf("timer seq %+v\n", seq)
 		case evt := <-events:
 			now := time.Now()
 			elapsed := now.Sub(lastEvent)
@@ -107,8 +136,8 @@ func (app *App) KeyLoop() error {
 
 			if elapsed.Milliseconds() > app.Options.Interval {
 				fmt.Printf("reset! %d %d\n", elapsed.Milliseconds(), app.Options.Interval)
-				seq = Sequence{}
-				cur = make(Chord)
+				seq = patterns.Sequence{}
+				cur = make(patterns.Chord)
 			}
 
 			if evt.Value == 0 {
@@ -127,7 +156,7 @@ func (app *App) KeyLoop() error {
 					timer.Reset(time.Duration(app.Options.Interval) * time.Millisecond)
 					fmt.Printf("seq %v\n", seq)
 				}
-				cur = make(Chord)
+				cur = make(patterns.Chord)
 			} else {
 				for key := range keysDown {
 					cur[key] = true
@@ -170,12 +199,12 @@ func main() {
 		fmt.Printf("actions: %+v\n", config.Actions)
 	}
 
-	if err := app.OpenDevice(); err != nil {
-		log.Fatalf("ERROR: %v", err)
+	if err := app.Init(); err != nil {
+		log.Fatalf("ERROR: failed to initialize: %v", err)
 	}
 
 	if err := app.KeyLoop(); err != nil {
-		log.Fatalf("ERROR: %v", err)
+		log.Fatalf("ERROR: failed to process events: %v", err)
 	}
 }
 

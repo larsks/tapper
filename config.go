@@ -27,7 +27,7 @@ type (
 	}
 
 	ActionConfig struct {
-		Pattern string
+		Pattern []string
 		Command []string
 	}
 )

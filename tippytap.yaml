@@ -5,7 +5,9 @@ tippytap:
     interval: 200
   actions:
     # Press left shift twice
-    - pattern: LEFTSHIFT LEFTSHIFT
+    - pattern:
+      - LEFTSHIFT
+      - LEFTSHIFT
       command:
         - zenity
         - --info
@@ -13,7 +15,9 @@ tippytap:
         - command1
 
     # Press right shift, then left shift, then right shift, then left shift
-    - pattern: RIGHTSHIFT LEFTSHIFT RIGHTSHIFT LEFTSHIFT
+    - pattern:
+        - RIGHTSHIFT
+        - RIGHTSHIFT
       command:
         - zenity
         - --info
@@ -21,16 +25,20 @@ tippytap:
         - command2
 
     # Press both the right and left shift keys together, twice
-    - pattern: RIGHTSHIFT|LEFTSHIFT RIGHTSHIFT|LEFTSHIFT
+    - pattern:
+      - LEFTSHIFT
+      - RIGHTSHIFT
+      - LEFTSHIFT
       command:
         - zenity
         - --info
         - --text
         - command3
-
-    # Press right shift key three times while holding down the left
-    # shift key
-    - pattern: LEFTSHIFT|(RIGHTSHIFT RIGHTSHIFT RIGHTSHIFT)
+          #
+    # Press both the right and left shift keys together, twice
+    - pattern:
+      - LEFTSHIFT RIGHTSHIFT
+      - LEFTSHIFT RIGHTSHIFT
       command:
         - zenity
         - --info
