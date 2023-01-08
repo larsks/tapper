@@ -125,19 +125,31 @@ func (app *App) KeyLoop() error {
 	cur := make(patterns.Chord)
 	seq := patterns.Sequence{}
 
+	var match *patterns.PatternNode
+
+	reset := func() {
+		fmt.Printf("reset!\n")
+		seq = patterns.Sequence{}
+		cur = make(patterns.Chord)
+		match = nil
+	}
+
 	for {
 		select {
 		case <-timer.C:
-			fmt.Printf("timer seq %+v\n", seq)
+			fmt.Printf("timer match %+v\n", match)
+			if match != nil {
+				fmt.Printf("timer execute: %+v\n", match)
+				match.RunCommand()
+				reset()
+			}
 		case evt := <-events:
 			now := time.Now()
 			elapsed := now.Sub(lastEvent)
 			lastEvent = now
 
 			if elapsed.Milliseconds() > app.Options.Interval {
-				fmt.Printf("reset! %d %d\n", elapsed.Milliseconds(), app.Options.Interval)
-				seq = patterns.Sequence{}
-				cur = make(patterns.Chord)
+				reset()
 			}
 
 			if evt.Value == 0 {
@@ -152,9 +164,19 @@ func (app *App) KeyLoop() error {
 			// all keys have been released
 			if len(keysDown) == 0 {
 				if len(cur) > 0 {
+					var found, more bool
 					seq = append(seq, cur)
-					timer.Reset(time.Duration(app.Options.Interval) * time.Millisecond)
-					fmt.Printf("seq %v\n", seq)
+					match, found, more = app.patternMap.FindSequence(seq)
+					if found {
+						if more {
+							timer.Reset(time.Duration(app.Options.Interval) * time.Millisecond)
+						} else {
+							tmp := match
+							reset()
+							fmt.Printf("execute: %+v\n", tmp)
+							tmp.RunCommand()
+						}
+					}
 				}
 				cur = make(patterns.Chord)
 			} else {
@@ -228,7 +250,7 @@ func printVersion() {
 }
 
 func printKeys() {
-	for _, key := range evdev.KEYNames {
-		fmt.Printf("%s\n", key)
+	for code, key := range evdev.KEYNames {
+		fmt.Printf("[%03d] %s\n", code, key)
 	}
 }

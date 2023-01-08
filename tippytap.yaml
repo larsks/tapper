@@ -4,7 +4,6 @@ tippytap:
   options:
     interval: 200
   actions:
-    # Press left shift twice
     - pattern:
       - LEFTSHIFT
       - LEFTSHIFT
@@ -14,7 +13,6 @@ tippytap:
         - --text
         - command1
 
-    # Press right shift, then left shift, then right shift, then left shift
     - pattern:
         - RIGHTSHIFT
         - RIGHTSHIFT
@@ -24,7 +22,16 @@ tippytap:
         - --text
         - command2
 
-    # Press both the right and left shift keys together, twice
+    - pattern:
+        - RIGHTSHIFT
+        - RIGHTSHIFT
+        - RIGHTSHIFT
+      command:
+        - zenity
+        - --info
+        - --text
+        - command3
+
     - pattern:
       - LEFTSHIFT
       - RIGHTSHIFT
@@ -33,9 +40,8 @@ tippytap:
         - zenity
         - --info
         - --text
-        - command3
-          #
-    # Press both the right and left shift keys together, twice
+        - command4
+
     - pattern:
       - LEFTSHIFT RIGHTSHIFT
       - LEFTSHIFT RIGHTSHIFT
@@ -43,4 +49,13 @@ tippytap:
         - zenity
         - --info
         - --text
-        - command4
+        - command5
+
+    - pattern:
+      - CAPSLOCK
+      - CAPSLOCK
+      command:
+        - zenity
+        - --info
+        - --text
+        - command6

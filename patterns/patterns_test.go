@@ -85,13 +85,15 @@ func TestFindSequence(t *testing.T) {
 	}
 
 	for _, check := range seqlist {
-		found, more := p.FindSequence(check.seq)
+		node, found, more := p.FindSequence(check.seq)
 		fmt.Printf("---\nseq %v\nhave found (%+v) %t more %t\nwant found %t more %t\n",
-			check.seq, found, found != nil, more, check.found, check.more)
+			check.seq, node, found, more, check.found, check.more)
+
+		assert.Equal(t, check.found, found)
 		if check.found {
-			assert.NotNil(t, found)
+			assert.NotNil(t, node)
 		} else {
-			assert.Nil(t, found)
+			assert.Nil(t, node)
 		}
 		assert.Equal(t, check.more, more)
 	}

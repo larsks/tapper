@@ -2,6 +2,7 @@ package patterns
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 
 	evdev "github.com/holoplot/go-evdev"
@@ -67,7 +68,7 @@ outer:
 	node.Command = Command
 }
 
-func (patterns *Patterns) FindSequence(seq Sequence) (*PatternNode, bool) {
+func (patterns *Patterns) FindSequence(seq Sequence) (*PatternNode, bool, bool) {
 	node := &patterns.PatternNode
 
 	for len(seq) > 0 {
@@ -75,7 +76,7 @@ func (patterns *Patterns) FindSequence(seq Sequence) (*PatternNode, bool) {
 			if maps.Equal(next.Keys, seq[0]) {
 				node = next
 				if len(seq) == 1 && node.Terminal {
-					return node, len(node.Next) > 0
+					return node, true, len(node.Next) > 0
 				}
 				break
 			}
@@ -84,5 +85,15 @@ func (patterns *Patterns) FindSequence(seq Sequence) (*PatternNode, bool) {
 		seq = seq[1:]
 	}
 
-	return nil, len(node.Next) > 0
+	return nil, false, len(node.Next) > 0
+}
+
+func (node *PatternNode) RunCommand() error {
+	if len(node.Command) == 0 {
+		return fmt.Errorf("no command")
+	}
+
+	cmd := exec.Command(node.Command[0], node.Command[1:]...)
+	err := cmd.Run()
+	return err
 }
