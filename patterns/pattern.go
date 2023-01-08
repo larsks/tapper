@@ -94,6 +94,6 @@ func (node *PatternNode) RunCommand() error {
 	}
 
 	cmd := exec.Command(node.Command[0], node.Command[1:]...)
-	err := cmd.Run()
-	return err
+	go cmd.Run()
+	return nil
 }
