@@ -149,7 +149,7 @@ func (app *App) KeyLoop() error {
 			fmt.Printf("timer match %+v\n", match)
 			if match != nil {
 				fmt.Printf("timer execute: %+v\n", match)
-				match.RunCommand()
+				_ = match.RunCommand()
 				reset()
 			}
 		case evt := <-events:
@@ -181,12 +181,11 @@ func (app *App) KeyLoop() error {
 							timer.Reset(time.Duration(app.Options.Interval) * time.Millisecond)
 						} else {
 							fmt.Printf("execute: %+v\n", match)
-							match.RunCommand()
+							_ = match.RunCommand()
 							reset()
 						}
 					}
 				}
-				cur = make(patterns.Chord)
 			} else {
 				for key := range keysDown {
 					cur[key] = true
