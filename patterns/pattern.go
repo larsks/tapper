@@ -2,6 +2,7 @@ package patterns
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 
@@ -94,6 +95,11 @@ func (node *PatternNode) RunCommand() error {
 	}
 
 	cmd := exec.Command(node.Command[0], node.Command[1:]...)
-	go cmd.Run()
+	go func() {
+		err := cmd.Run()
+		if err != nil {
+			log.Printf("failed to run command: %v", err)
+		}
+	}()
 	return nil
 }

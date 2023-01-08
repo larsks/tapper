@@ -21,7 +21,6 @@ type (
 )
 
 var optConfigPath string
-var optDeviceBasePath string
 var optListDevices bool
 var optListKeys bool
 var optVersion bool
@@ -29,7 +28,6 @@ var optDebug bool
 
 func init() {
 	flag.StringVarP(&optConfigPath, "config", "f", "tippytap.yaml", "Path to configuration file")
-	flag.StringVarP(&optDeviceBasePath, "device-path", "D", "/dev/input", "Base device path")
 	flag.BoolVarP(&optDebug, "debug", "", false, "Show debug output")
 	flag.BoolVarP(&optListDevices, "list-devices", "L", false, "List available devices")
 	flag.BoolVarP(&optListKeys, "list-keys", "K", false, "List available keycodes")

@@ -7,15 +7,21 @@ import (
 	"os"
 	"path/filepath"
 
+	"tippytap/environ"
+
 	evdev "github.com/holoplot/go-evdev"
 )
+
+var env *environ.Environ = environ.NewEnviron("TAPPER")
+
+var DEVICE_BASE_PATH string = env.Get("DEVICE_BASE_PATH", "/dev/input")
 
 func listInputDevices() []string {
 	var devices []string
 
-	files, err := os.ReadDir(optDeviceBasePath)
+	files, err := os.ReadDir(DEVICE_BASE_PATH)
 	if err != nil {
-		log.Printf("failed to read %s: %v", optDeviceBasePath, err)
+		log.Printf("failed to read %s: %v", DEVICE_BASE_PATH, err)
 		return nil
 	}
 
@@ -24,7 +30,7 @@ func listInputDevices() []string {
 			continue
 		}
 
-		full := fmt.Sprintf("%s/%s", optDeviceBasePath, fileName.Name())
+		full := fmt.Sprintf("%s/%s", DEVICE_BASE_PATH, fileName.Name())
 		devices = append(devices, full)
 	}
 
