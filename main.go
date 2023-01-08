@@ -180,10 +180,9 @@ func (app *App) KeyLoop() error {
 						if more {
 							timer.Reset(time.Duration(app.Options.Interval) * time.Millisecond)
 						} else {
-							tmp := match
+							fmt.Printf("execute: %+v\n", match)
+							match.RunCommand()
 							reset()
-							fmt.Printf("execute: %+v\n", tmp)
-							tmp.RunCommand()
 						}
 					}
 				}
