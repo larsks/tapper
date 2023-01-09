@@ -28,9 +28,10 @@ var optListDevices bool
 var optListKeys bool
 var optVersion bool
 var optDebug bool
-var env *environ.Environ = environ.NewEnviron("TAPPER")
 
+var env *environ.Environ = environ.NewEnviron("TAPPER")
 var DEFAULT_CONFIG_FILE string = env.Get("CONFIG_FILE", filepath.Join(xdg.ConfigHome, "tapper", "tapper.yaml"))
+var DEFAULT_INTERVAL = env.GetInt("INTERVAL", 200)
 
 func init() {
 	flag.StringVarP(&optConfigPath, "config", "f", DEFAULT_CONFIG_FILE, "Path to configuration file")
@@ -118,6 +119,14 @@ func (app *App) LoadPatterns() error {
 }
 
 func (app *App) Init() error {
+	if app.Options == nil {
+		app.Options = new(Options)
+	}
+
+	if app.Options.Interval == 0 {
+		app.Options.Interval = DEFAULT_INTERVAL
+	}
+
 	if err := app.OpenDevice(); err != nil {
 		return err
 	}

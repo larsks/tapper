@@ -3,6 +3,7 @@ package environ
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type (
@@ -26,4 +27,15 @@ func (env *Environ) Get(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func (env *Environ) GetInt(key string, fallback int64) int64 {
+	val := env.Get(key, "")
+
+	intVal, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return fallback
+	}
+
+	return intVal
 }
