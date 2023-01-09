@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"path/filepath"
+	"tapper/environ"
 	"tapper/patterns"
 	"tapper/version"
 	"time"
 
+	"github.com/adrg/xdg"
 	evdev "github.com/holoplot/go-evdev"
 	flag "github.com/spf13/pflag"
 )
@@ -25,9 +28,12 @@ var optListDevices bool
 var optListKeys bool
 var optVersion bool
 var optDebug bool
+var env *environ.Environ = environ.NewEnviron("TAPPER")
+
+var DEFAULT_CONFIG_FILE string = env.Get("CONFIG_FILE", filepath.Join(xdg.ConfigHome, "tapper", "tapper.yaml"))
 
 func init() {
-	flag.StringVarP(&optConfigPath, "config", "f", "tapper.yaml", "Path to configuration file")
+	flag.StringVarP(&optConfigPath, "config", "f", DEFAULT_CONFIG_FILE, "Path to configuration file")
 	flag.BoolVarP(&optDebug, "debug", "", false, "Show debug output")
 	flag.BoolVarP(&optListDevices, "list-devices", "L", false, "List available devices")
 	flag.BoolVarP(&optListKeys, "list-keys", "K", false, "List available keycodes")

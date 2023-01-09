@@ -7,12 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"tapper/environ"
-
 	evdev "github.com/holoplot/go-evdev"
 )
-
-var env *environ.Environ = environ.NewEnviron("TAPPER")
 
 var DEVICE_BASE_PATH string = env.Get("DEVICE_BASE_PATH", "/dev/input")
 
