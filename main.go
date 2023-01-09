@@ -125,7 +125,6 @@ func (app *App) Init() error {
 
 func (app *App) KeyLoop() error {
 	events := app.KeyEvents()
-	timer := time.NewTimer(0)
 
 	lastEvent := time.Time{}
 	keysDown := make(patterns.Chord)
@@ -133,6 +132,7 @@ func (app *App) KeyLoop() error {
 	seq := patterns.Sequence{}
 
 	var match *patterns.PatternNode
+	var timer *time.Timer
 
 	reset := func() {
 		fmt.Printf("reset!\n")
@@ -141,56 +141,58 @@ func (app *App) KeyLoop() error {
 		match = nil
 	}
 
-	for {
-		select {
-		case <-timer.C:
-			fmt.Printf("timer match %+v\n", match)
-			if match != nil {
-				fmt.Printf("timer execute: %+v\n", match)
-				_ = match.RunCommand()
-				reset()
-			}
-		case evt := <-events:
-			now := time.Now()
-			elapsed := now.Sub(lastEvent)
-			lastEvent = now
+	runCommand := func() {
+		if match != nil {
+			fmt.Printf("execute: %+v\n", match)
+			_ = match.RunCommand()
+			reset()
+		}
+	}
 
-			if elapsed.Milliseconds() > app.Options.Interval {
-				reset()
-			}
+	for evt := range events {
+		now := time.Now()
+		elapsed := now.Sub(lastEvent)
+		lastEvent = now
 
-			if evt.Value == 0 {
-				delete(keysDown, evt.Code)
-			} else {
-				keysDown[evt.Code] = true
-			}
+		if timer != nil {
+			timer.Stop()
+		}
 
-			fmt.Printf("keysdown %v cur %+v seq %v\n",
-				keysDown, cur, seq)
+		if elapsed.Milliseconds() > app.Options.Interval {
+			reset()
+		}
 
-			// all keys have been released
-			if len(keysDown) == 0 {
-				if len(cur) > 0 {
-					var found, more bool
-					seq = append(seq, cur)
-					match, found, more = app.patternMap.FindSequence(seq)
-					if found {
-						if more {
-							timer.Reset(time.Duration(app.Options.Interval) * time.Millisecond)
-						} else {
-							fmt.Printf("execute: %+v\n", match)
-							_ = match.RunCommand()
-							reset()
-						}
+		if evt.Value == 0 {
+			delete(keysDown, evt.Code)
+		} else {
+			keysDown[evt.Code] = true
+		}
+
+		fmt.Printf("keysdown %v cur %+v seq %v\n",
+			keysDown, cur, seq)
+
+		// all keys have been released
+		if len(keysDown) == 0 {
+			if len(cur) > 0 {
+				var found, more bool
+				seq = append(seq, cur)
+				match, found, more = app.patternMap.FindSequence(seq)
+				if found {
+					if more {
+						timer = time.AfterFunc(time.Duration(app.Options.Interval)*time.Millisecond, runCommand)
+					} else {
+						runCommand()
 					}
 				}
-			} else {
-				for key := range keysDown {
-					cur[key] = true
-				}
+			}
+		} else {
+			for key := range keysDown {
+				cur[key] = true
 			}
 		}
 	}
+
+	return nil
 }
 
 func main() {
