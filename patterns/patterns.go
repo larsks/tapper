@@ -94,6 +94,7 @@ func (node *PatternNode) RunCommand() error {
 		return fmt.Errorf("no command")
 	}
 
+	log.Printf("running command %#v", node.Command)
 	cmd := exec.Command(node.Command[0], node.Command[1:]...)
 	go func() {
 		err := cmd.Run()

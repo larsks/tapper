@@ -27,7 +27,6 @@ var optConfigPath string
 var optListDevices bool
 var optListKeys bool
 var optVersion bool
-var optDebug bool
 
 var env *environ.Environ = environ.NewEnviron("TAPPER")
 var DEFAULT_CONFIG_FILE string = env.Get("CONFIG_FILE", filepath.Join(xdg.ConfigHome, "tapper", "tapper.yaml"))
@@ -35,7 +34,6 @@ var DEFAULT_INTERVAL = env.GetInt("INTERVAL", 200)
 
 func init() {
 	flag.StringVarP(&optConfigPath, "config", "f", DEFAULT_CONFIG_FILE, "Path to configuration file")
-	flag.BoolVarP(&optDebug, "debug", "", false, "Show debug output")
 	flag.BoolVarP(&optListDevices, "list-devices", "L", false, "List available devices")
 	flag.BoolVarP(&optListKeys, "list-keys", "K", false, "List available keycodes")
 	flag.BoolVarP(&optVersion, "version", "v", false, "Show version")
@@ -150,7 +148,6 @@ func (app *App) KeyLoop() error {
 	var timer *time.Timer
 
 	reset := func() {
-		fmt.Printf("reset!\n")
 		seq = patterns.Sequence{}
 		cur = make(patterns.Chord)
 		match = nil
@@ -158,7 +155,6 @@ func (app *App) KeyLoop() error {
 
 	runCommand := func() {
 		if match != nil {
-			fmt.Printf("execute: %+v\n", match)
 			_ = match.RunCommand()
 			reset()
 		}
@@ -182,9 +178,6 @@ func (app *App) KeyLoop() error {
 		} else {
 			keysDown[evt.Code] = true
 		}
-
-		fmt.Printf("keysdown %v cur %+v seq %v\n",
-			keysDown, cur, seq)
 
 		// all keys have been released
 		if len(keysDown) == 0 {
@@ -236,13 +229,6 @@ func main() {
 	}
 
 	app := NewApp(config)
-
-	if optDebug {
-		fmt.Printf("config\n")
-		fmt.Printf("device: %+v\n", config.Device)
-		fmt.Printf("options: %+v\n", config.Options)
-		fmt.Printf("actions: %+v\n", config.Actions)
-	}
 
 	if err := app.Init(); err != nil {
 		log.Fatalf("ERROR: failed to initialize: %v", err)
