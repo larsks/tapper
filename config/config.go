@@ -21,9 +21,10 @@ type (
 	}
 
 	ConfigFile struct {
-		Device   Device
-		Interval uint64
-		Actions  []Action
+		Device         Device
+		Interval       uint64
+		DeviceBasePath string `mapstructure:"device_base_path"`
+		Actions        []Action
 	}
 )
 
@@ -39,8 +40,10 @@ var Config ConfigFile
 func init() {
 	Options.SetConfigType("yaml")
 	Options.SetEnvPrefix("TAPPER")
-	Options.SetDefault("interval", "200")
 	Options.AutomaticEnv()
+
+	Options.SetDefault("interval", "200")
+	Options.SetDefault("device_base_path", "/dev/input")
 }
 
 func LoadConfig(reader io.Reader) error {
@@ -48,7 +51,9 @@ func LoadConfig(reader io.Reader) error {
 		return fmt.Errorf("failed to read configuration: %w", err)
 	}
 
-	Options.Unmarshal(&Config)
+	if err := Options.Unmarshal(&Config); err != nil {
+		return fmt.Errorf("failed to unmarshal configuration: %w", err)
+	}
 
 	return nil
 }

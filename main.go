@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
-	"tapper/environ"
+	"tapper/config"
 	"tapper/patterns"
 	"tapper/version"
 	"time"
@@ -16,7 +17,6 @@ import (
 
 type (
 	App struct {
-		*TapperConfig
 		dev        *evdev.InputDevice
 		patternMap *patterns.Patterns
 		activeKeys patterns.Chord
@@ -28,37 +28,38 @@ var optListDevices bool
 var optListKeys bool
 var optVersion bool
 
-var env *environ.Environ = environ.NewEnviron("TAPPER")
-var DEFAULT_CONFIG_FILE string = env.Get("CONFIG_FILE", filepath.Join(xdg.ConfigHome, "tapper", "tapper.yaml"))
-var DEFAULT_INTERVAL = env.GetInt("INTERVAL", 200)
-
 func init() {
-	flag.StringVarP(&optConfigPath, "config", "f", DEFAULT_CONFIG_FILE, "Path to configuration file")
+	configFilePath, ok := os.LookupEnv("TAPPER_CONFIG_FILE")
+	if !ok {
+		configFilePath = filepath.Join(xdg.ConfigHome, "tapper", "tapper.yaml")
+	}
+
+	flag.StringVarP(&optConfigPath, "config", "f", configFilePath, "Path to configuration file")
 	flag.BoolVarP(&optListDevices, "list-devices", "L", false, "List available devices")
 	flag.BoolVarP(&optListKeys, "list-keys", "K", false, "List available keycodes")
 	flag.BoolVarP(&optVersion, "version", "v", false, "Show version")
 }
 
-func NewApp(config *TapperConfig) *App {
-	return &App{
-		TapperConfig: config,
-	}
+func NewApp() *App {
+	return &App{}
 }
 
 func (app *App) GetDevice() error {
 	var err error
 
-	if app.Device.Path != "" {
-		dev, err := evdev.Open(app.Device.Path)
+	path := config.Options.GetString("device.path")
+	name := config.Options.GetString("device.name")
+
+	if path != "" {
+		app.dev, err = evdev.Open(path)
 		if err != nil {
-			return fmt.Errorf("failed to open device %s: %v", app.Device.Path, err)
+			return fmt.Errorf("failed to open device %s: %v", path, err)
 		}
 
-		app.dev = dev
 		return nil
 	}
 
-	app.dev, err = findDeviceByName(app.Device.Name)
+	app.dev, err = findDeviceByName(name)
 	return err
 }
 
@@ -89,7 +90,6 @@ func (app *App) OpenDevice() error {
 	if err != nil {
 		return fmt.Errorf("failed to get device path: %w", err)
 	}
-	log.Printf("using device %s\n", app.dev.Path())
 	return nil
 }
 
@@ -97,7 +97,7 @@ func (app *App) LoadPatterns() error {
 	app.patternMap = patterns.NewPatterns()
 	app.activeKeys = make(patterns.Chord)
 
-	for _, actionconf := range app.Actions {
+	for _, actionconf := range config.Config.Actions {
 		seq := patterns.Sequence{}
 		for _, keys := range actionconf.Pattern {
 			chord, err := patterns.ChordFromString(keys)
@@ -117,14 +117,6 @@ func (app *App) LoadPatterns() error {
 }
 
 func (app *App) Init() error {
-	if app.Options == nil {
-		app.Options = new(Options)
-	}
-
-	if app.Options.Interval == 0 {
-		app.Options.Interval = DEFAULT_INTERVAL
-	}
-
 	if err := app.OpenDevice(); err != nil {
 		return err
 	}
@@ -143,6 +135,7 @@ func (app *App) KeyLoop() error {
 	keysDown := make(patterns.Chord)
 	cur := make(patterns.Chord)
 	seq := patterns.Sequence{}
+	interval := time.Duration(config.Options.GetUint64("interval")) * time.Millisecond
 
 	var match *patterns.PatternNode
 	var timer *time.Timer
@@ -169,7 +162,7 @@ func (app *App) KeyLoop() error {
 			timer.Stop()
 		}
 
-		if elapsed.Milliseconds() > app.Options.Interval {
+		if elapsed > interval {
 			reset()
 		}
 
@@ -188,7 +181,7 @@ func (app *App) KeyLoop() error {
 				match, found, more = app.patternMap.FindSequence(seq)
 				if found {
 					if more {
-						timer = time.AfterFunc(time.Duration(app.Options.Interval)*time.Millisecond, runCommand)
+						timer = time.AfterFunc(interval, runCommand)
 					} else {
 						runCommand()
 					}
@@ -222,13 +215,11 @@ func main() {
 		return
 	}
 
-	log.Printf("read config from %s\n", optConfigPath)
-	config, err := ReadConfiguration(optConfigPath)
-	if err != nil {
-		log.Fatalf("failed to read configuration: %v", err)
+	if err := config.LoadConfigFromFile(optConfigPath); err != nil {
+		log.Fatalf("ERROR: failed to read configuration: %v", err)
 	}
 
-	app := NewApp(config)
+	app := NewApp()
 
 	if err := app.Init(); err != nil {
 		log.Fatalf("ERROR: failed to initialize: %v", err)
