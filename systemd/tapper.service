@@ -1,0 +1,9 @@
+[Unit]
+Description = Tapper: Multi-tap hotkey support
+
+[Service]
+Type = exec
+ExecStart = /usr/local/bin/tapper
+
+[Install]
+WantedBy = default.target
