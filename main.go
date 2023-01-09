@@ -176,6 +176,7 @@ func (app *App) KeyLoop() error {
 			if len(cur) > 0 {
 				var found, more bool
 				seq = append(seq, cur)
+				cur = make(patterns.Chord)
 				match, found, more = app.patternMap.FindSequence(seq)
 				if found {
 					if more {
