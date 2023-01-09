@@ -8,93 +8,143 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFindSequence(t *testing.T) {
-	pattern_ls := Sequence{
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	}
-
-	pattern_rs := Sequence{
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	}
-
-	pattern_lsls := Sequence{
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	}
-
-	pattern_lslsls := Sequence{
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	}
-
-	pattern_lsrsls := Sequence{
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	}
-
-	pattern_rsrsrs := Sequence{
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	}
-
-	pattern_rsls := Sequence{
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	}
-
-	pattern_lsrs := Sequence{
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	}
-
-	pattern_lsrsrs := Sequence{
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	}
-
-	pattern_rsrs := Sequence{
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	}
-
-	p := NewPatterns()
-	p.AddSequence(pattern_lsls, []string{})
-	p.AddSequence(pattern_lsrsls, []string{})
-	p.AddSequence(pattern_lsrsrs, []string{})
-	p.AddSequence(pattern_rsrsrs, []string{})
-	p.AddSequence(pattern_rsrs, []string{})
-
-	seqlist := []struct {
-		seq   Sequence
+type (
+	SequenceMap map[string]Sequence
+	Expected    struct {
+		name  string
 		found bool
 		more  bool
-	}{
-		{pattern_ls, false, true},
-		{pattern_rs, false, true},
-		{pattern_lsls, true, false},
-		{pattern_lsrs, false, true},
-		{pattern_lsrsls, true, false},
-		{pattern_lsrsrs, true, false},
-		{pattern_lslsls, false, false},
-		{pattern_rsls, false, true},
-		{pattern_rsrs, true, true},
 	}
+)
 
-	for _, check := range seqlist {
-		node, found, more := p.FindSequence(check.seq)
-		fmt.Printf("---\nseq %v\nhave found (%+v) %t more %t\nwant found %t more %t\n",
-			check.seq, node, found, more, check.found, check.more)
+var sequenceMap = SequenceMap{
+	"ls": {
+		Chord{evdev.KEY_LEFTSHIFT: true},
+	},
+	"rs": {
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+	},
+	"lsls": {
+		Chord{evdev.KEY_LEFTSHIFT: true},
+		Chord{evdev.KEY_LEFTSHIFT: true},
+	},
+	"lslsls": {
+		Chord{evdev.KEY_LEFTSHIFT: true},
+		Chord{evdev.KEY_LEFTSHIFT: true},
+		Chord{evdev.KEY_LEFTSHIFT: true},
+	},
+	"lsrsls": {
+		Chord{evdev.KEY_LEFTSHIFT: true},
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+		Chord{evdev.KEY_LEFTSHIFT: true},
+	},
+	"rsrsrs": {
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+	},
+	"rsls": {
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+		Chord{evdev.KEY_LEFTSHIFT: true},
+	},
+	"lsrs": {
+		Chord{evdev.KEY_LEFTSHIFT: true},
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+	},
+	"lsrsrs": {
+		Chord{evdev.KEY_LEFTSHIFT: true},
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+	},
+	"rsrs": {
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+		Chord{evdev.KEY_RIGHTSHIFT: true},
+	},
+	"chord:lsrs": {
+		Chord{evdev.KEY_LEFTSHIFT: true, evdev.KEY_RIGHTSHIFT: true},
+	},
+	"chord:lsrs:lsrs": {
+		Chord{evdev.KEY_LEFTSHIFT: true, evdev.KEY_RIGHTSHIFT: true},
+		Chord{evdev.KEY_LEFTSHIFT: true, evdev.KEY_RIGHTSHIFT: true},
+	},
+}
 
-		assert.Equal(t, check.found, found)
-		if check.found {
-			assert.NotNil(t, node)
-		} else {
-			assert.Nil(t, node)
+func createPatterns(names ...string) *Patterns {
+	p := NewPatterns()
+
+	for _, name := range names {
+		seq, ok := sequenceMap[name]
+		if !ok {
+			panic("unknown sequence name")
 		}
-		assert.Equal(t, check.more, more)
+
+		p.AddSequence(seq, []string{name})
 	}
+
+	return p
+}
+
+func checkResults(t *testing.T, patterns *Patterns, expected []Expected) {
+	for _, check := range expected {
+		seq := sequenceMap[check.name]
+		node, found, more := patterns.FindSequence(seq)
+
+		/*
+			fmt.Printf("---\nsequence: %s\nhave: found %t more %t\nwant: found %t have %t\n",
+				check.name, found, more, check.found, check.more,
+			)
+		*/
+
+		assert.Equal(t, check.found, found, fmt.Sprintf("sequence %s field found", check.name))
+		assert.Equal(t, check.more, more, fmt.Sprintf("sequence %s field more", check.name))
+
+		if check.found {
+			assert.Equal(t, check.name, node.Command[0])
+		}
+	}
+}
+
+func TestFindSequence_chords(t *testing.T) {
+	patterns := createPatterns(
+		"lsrs",
+		"chord:lsrs:lsrs",
+	)
+
+	expected := []Expected{
+		{"lsrs", true, false},
+		{"chord:lsrs", false, true},
+		{"chord:lsrs:lsrs", true, false},
+	}
+
+	checkResults(t, patterns, expected)
+}
+
+func TestFindSequence_simple(t *testing.T) {
+	patterns := createPatterns(
+		"ls",
+		"rs",
+		"lsls",
+		"lsrs",
+	)
+
+	expected := []Expected{
+		{"ls", true, true},
+		{"rs", true, false},
+		{"rsrs", false, false},
+		{"lsls", true, false},
+		{"lsrs", true, false},
+		{"lslsls", false, false},
+	}
+
+	checkResults(t, patterns, expected)
+}
+
+func TestFindSequence_empty(t *testing.T) {
+	patterns := createPatterns()
+
+	expected := []Expected{
+		{"ls", false, false},
+	}
+
+	checkResults(t, patterns, expected)
 }
