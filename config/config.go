@@ -18,6 +18,7 @@ type (
 	Action struct {
 		Pattern []string
 		Command []string
+		Keys    []string
 	}
 
 	ConfigFile struct {
