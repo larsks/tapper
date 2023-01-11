@@ -8,8 +8,8 @@ import (
 	"github.com/holoplot/go-evdev"
 )
 
-var DEFAULT_KEY_DOWN_TIME time.Duration = 10 * time.Millisecond
-var DEFAULT_KEY_INTERVAL time.Duration = 100 * time.Millisecond
+var DEFAULT_KEY_DOWN_TIME time.Duration = 5 * time.Millisecond
+var DEFAULT_KEY_INTERVAL time.Duration = 10 * time.Millisecond
 
 func NewKeyboard() *Keyboard {
 	k := Keyboard{}
@@ -72,30 +72,41 @@ func (kbd *Keyboard) Start() error {
 	}
 
 	kbd.Dev = dev
+
+	// We seem to lose the first event we send on the virtual device so
+	// we send an initial MSC_TIMESTAMP message.
+	return kbd.SendEvent(evdev.EV_MSC, evdev.MSC_TIMESTAMP, 0)
+}
+
+func (kbd *Keyboard) SendEvent(evtype evdev.EvType, evcode evdev.EvCode, value int32) error {
+	evt := evdev.InputEvent{
+		Type:  evtype,
+		Code:  evcode,
+		Value: value,
+	}
+
+	if err := kbd.Dev.WriteOne(&evt); err != nil {
+		return fmt.Errorf("%s: failed to send event: %w", evdev.EVNames[evtype], err)
+	}
+
 	return nil
+}
+
+func (kbd *Keyboard) SendSynReport() error {
+	return kbd.SendEvent(evdev.EV_SYN, evdev.SYN_REPORT, 0)
 }
 
 func (kbd *Keyboard) KeyEvent(chord keys.Chord, value int32) error {
 	for key := range chord {
-		evt := evdev.InputEvent{
-			Type:  evdev.EV_KEY,
-			Code:  key,
-			Value: value,
-		}
-		if err := kbd.Dev.WriteOne(&evt); err != nil {
+		if err := kbd.SendEvent(evdev.EV_KEY, key, value); err != nil {
 			return fmt.Errorf("failed to send key %d: %w", key, err)
 		}
+
+		if err := kbd.SendSynReport(); err != nil {
+			return err
+		}
 	}
 
-	evt := evdev.InputEvent{
-		Type:  evdev.EV_SYN,
-		Code:  evdev.SYN_REPORT,
-		Value: 0,
-	}
-
-	if err := kbd.Dev.WriteOne(&evt); err != nil {
-		return fmt.Errorf("failed to send syn report: %w", err)
-	}
 	return nil
 }
 
