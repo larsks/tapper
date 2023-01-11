@@ -43,18 +43,18 @@ func (kbd *Keyboard) WithName(name string) *Keyboard {
 }
 
 func (kbd *Keyboard) WithKeys(keyEvents []evdev.EvCode) *Keyboard {
-	chord := make(keys.Chord)
+	chord := keys.NewChord()
 
 	for _, key := range kbd.capabilities[evdev.EV_KEY] {
-		chord[key] = true
+		chord.Add(key)
 	}
 
 	for _, key := range keyEvents {
-		chord[key] = true
+		chord.Add(key)
 	}
 
 	updated := []evdev.EvCode{}
-	for key := range chord {
+	for _, key := range chord.Keys() {
 		updated = append(updated, key)
 	}
 
@@ -96,8 +96,8 @@ func (kbd *Keyboard) SendSynReport() error {
 	return kbd.SendEvent(evdev.EV_SYN, evdev.SYN_REPORT, 0)
 }
 
-func (kbd *Keyboard) KeyEvent(chord keys.Chord, value int32) error {
-	for key := range chord {
+func (kbd *Keyboard) KeyEvent(chord *keys.Chord, value int32) error {
+	for _, key := range chord.Keys() {
 		if err := kbd.SendEvent(evdev.EV_KEY, key, value); err != nil {
 			return fmt.Errorf("failed to send key %d: %w", key, err)
 		}
@@ -110,15 +110,15 @@ func (kbd *Keyboard) KeyEvent(chord keys.Chord, value int32) error {
 	return nil
 }
 
-func (kbd *Keyboard) KeyDown(chord keys.Chord) error {
+func (kbd *Keyboard) KeyDown(chord *keys.Chord) error {
 	return kbd.KeyEvent(chord, 1)
 }
 
-func (kbd *Keyboard) KeyUp(chord keys.Chord) error {
+func (kbd *Keyboard) KeyUp(chord *keys.Chord) error {
 	return kbd.KeyEvent(chord, 0)
 }
 
-func (kbd *Keyboard) TypeChord(chord keys.Chord) error {
+func (kbd *Keyboard) TypeChord(chord *keys.Chord) error {
 	if err := kbd.KeyDown(chord); err != nil {
 		return err
 	}
@@ -131,8 +131,8 @@ func (kbd *Keyboard) TypeChord(chord keys.Chord) error {
 	return nil
 }
 
-func (kbd *Keyboard) TypeSequence(seq keys.Sequence) error {
-	for _, chord := range seq {
+func (kbd *Keyboard) TypeSequence(seq *keys.Sequence) error {
+	for _, chord := range seq.Chords() {
 		if err := kbd.TypeChord(chord); err != nil {
 			return err
 		}

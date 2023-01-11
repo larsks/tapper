@@ -25,7 +25,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	seq := keys.Sequence{}
+	seq := keys.NewSequence()
 	allKeys := keys.NewChord()
 
 	seqspec := flag.Args()
@@ -39,7 +39,7 @@ func main() {
 			log.Fatalf("%s: invalid key: %v", arg, err)
 		}
 
-		seq = append(seq, chord)
+		seq.Add(chord)
 		allKeys.Update(chord)
 	}
 

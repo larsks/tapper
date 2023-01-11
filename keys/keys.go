@@ -7,62 +7,90 @@ import (
 	"github.com/holoplot/go-evdev"
 )
 
-func NewChord(keys ...evdev.EvCode) Chord {
-	chord := make(Chord)
+func NewChord(keys ...evdev.EvCode) *Chord {
+	chord := Chord{}
 
 	for _, key := range keys {
-		chord[key] = true
+		chord.keys = append(chord.keys, key)
 	}
 
-	return chord
+	return &chord
 }
 
-func (chord Chord) Keys() (keys []evdev.EvCode) {
-	for k := range chord {
-		keys = append(keys, k)
+// A Chord is really an ordered set -- that is, we want to send keys
+// events in the order in which they are added to the chord, but we don't
+// want to allow duplicate events. Rather than trying to maintain a unique
+// list, we uniq-ify the list in this Keys() method.
+func (chord *Chord) Keys() (keys []evdev.EvCode) {
+	uniqueKeys := make(map[evdev.EvCode]bool)
+
+	for _, k := range chord.keys {
+		exists := uniqueKeys[k]
+
+		if !exists {
+			keys = append(keys, k)
+			uniqueKeys[k] = true
+		}
 	}
+
 	return
 }
 
-func (chord Chord) Add(key evdev.EvCode) {
-	chord[key] = true
+func (chord *Chord) Add(key evdev.EvCode) {
+	chord.keys = append(chord.keys, key)
 }
 
-func (chord Chord) Update(ref Chord) {
-	for key := range ref {
+func (chord *Chord) Update(ref *Chord) {
+	for _, key := range ref.Keys() {
 		chord.Add(key)
 	}
 }
 
-func (chord Chord) Remove(key evdev.EvCode) {
-	delete(chord, key)
+func (chord *Chord) Remove(deleteKey evdev.EvCode) {
+	newKeys := []evdev.EvCode{}
+
+	for _, key := range chord.Keys() {
+		if key != deleteKey {
+			newKeys = append(newKeys, key)
+		}
+	}
+
+	chord.keys = newKeys
 }
 
-func (chord Chord) String() string {
+func (chord *Chord) String() string {
 	var keys []string
 
-	for key := range chord {
+	for _, key := range chord.Keys() {
 		keys = append(keys, evdev.KEYNames[key])
 	}
 
 	return strings.Join(keys, ":")
 }
 
-func (seq Sequence) String() string {
+func NewSequence() *Sequence {
+	return &Sequence{}
+}
+
+func (seq *Sequence) Chords() []*Chord {
+	return seq.chords
+}
+
+func (seq *Sequence) String() string {
 	var chords []string
 
-	for _, chord := range seq {
+	for _, chord := range seq.chords {
 		chords = append(chords, chord.String())
 	}
 
 	return strings.Join(chords, " ")
 }
 
-func (seq Sequence) Add(chord Chord) {
-	seq = append(seq, chord)
+func (seq *Sequence) Add(chord *Chord) {
+	seq.chords = append(seq.chords, chord)
 }
 
-func ChordFromString(s string) (Chord, error) {
+func ChordFromString(s string) (*Chord, error) {
 	keys := NewChord()
 
 	for _, tok := range strings.Split(s, ":") {
@@ -72,13 +100,13 @@ func ChordFromString(s string) (Chord, error) {
 			return keys, fmt.Errorf("%s: unknown key name", tok)
 		}
 
-		keys[code] = true
+		keys.Add(code)
 	}
 
 	return keys, nil
 }
 
-func SequenceFromString(s string) (Sequence, error) {
+func SequenceFromString(s string) (*Sequence, error) {
 	seq := Sequence{}
 
 	for _, tok := range strings.Fields(s) {
@@ -87,8 +115,8 @@ func SequenceFromString(s string) (Sequence, error) {
 			return nil, err
 		}
 
-		seq = append(seq, chord)
+		seq.chords = append(seq.chords, chord)
 	}
 
-	return seq, nil
+	return &seq, nil
 }
