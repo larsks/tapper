@@ -5,10 +5,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
+
 	"tapper/config"
 	"tapper/patterns"
 	"tapper/version"
-	"time"
 
 	"github.com/adrg/xdg"
 	evdev "github.com/holoplot/go-evdev"
