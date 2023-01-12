@@ -54,9 +54,7 @@ func (kbd *Keyboard) WithKeys(keyEvents []evdev.EvCode) *Keyboard {
 	}
 
 	updated := []evdev.EvCode{}
-	for _, key := range chord.Keys() {
-		updated = append(updated, key)
-	}
+	updated = append(updated, chord.Keys()...)
 
 	kbd.capabilities[evdev.EV_KEY] = updated
 

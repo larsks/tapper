@@ -9,12 +9,9 @@ import (
 )
 
 func NewChord(keys ...evdev.EvCode) *Chord {
-	chord := Chord{}
-
-	for _, key := range keys {
-		chord.keys = append(chord.keys, key)
+	chord := Chord{
+		keys: keys,
 	}
-
 	return &chord
 }
 
