@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/holoplot/go-evdev"
+	"golang.org/x/exp/slices"
 )
 
 func NewChord(keys ...evdev.EvCode) *Chord {
@@ -34,6 +35,10 @@ func (chord *Chord) Keys() (keys []evdev.EvCode) {
 	}
 
 	return
+}
+
+func (chord *Chord) Equal(other *Chord) bool {
+	return slices.Equal(chord.Keys(), other.Keys())
 }
 
 func (chord *Chord) Add(key evdev.EvCode) {
@@ -68,8 +73,14 @@ func (chord *Chord) String() string {
 	return strings.Join(keys, ":")
 }
 
-func NewSequence() *Sequence {
-	return &Sequence{}
+func NewSequence(chords ...*Chord) *Sequence {
+	seq := Sequence{}
+
+	for _, chord := range chords {
+		seq.Add(chord)
+	}
+
+	return &seq
 }
 
 func (seq *Sequence) Chords() []*Chord {
