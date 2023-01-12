@@ -22,10 +22,13 @@ all: $(TARGET)
 $(TARGET): .checked $(SRC) go.sum
 	go build $(LDFLAGS) -o $(TARGET)
 
-check: .checked
+check: .check-lint .check-test
 
-.checked: $(SRC) go.sum
+.check-lint: $(SRC) go.sum
 	golangci-lint run | tee $@
+
+.check-test: $(SRC) go.sum
+	go test $(shell go list ./... | grep -v cmd/) | tee $@
 
 go.sum: go.mod
 	go mod tidy && touch $@
