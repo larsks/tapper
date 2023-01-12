@@ -37,6 +37,17 @@ func (kbd *Keyboard) WithCapabilities(caps map[evdev.EvType][]evdev.EvCode) *Key
 	return kbd
 }
 
+// Create uninput device with the same capabilties as a prototype device.
+func (kbd *Keyboard) WithPrototype(proto *evdev.InputDevice) *Keyboard {
+	capabilities := make(map[evdev.EvType][]evdev.EvCode)
+	for _, evtype := range proto.CapableTypes() {
+		capabilities[evtype] = append(capabilities[evtype], proto.CapableEvents(evtype)...)
+	}
+	kbd.capabilities = capabilities
+
+	return kbd
+}
+
 func (kbd *Keyboard) WithName(name string) *Keyboard {
 	kbd.name = name
 	return kbd
