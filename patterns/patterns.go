@@ -8,12 +8,11 @@ import (
 	"tapper/keys"
 
 	evdev "github.com/holoplot/go-evdev"
-	"golang.org/x/exp/maps"
 )
 
 type (
 	PatternNode struct {
-		Chord       keys.Chord
+		Chord       *keys.Chord
 		Command     []string
 		KeySequence keys.Sequence
 		Next        []*PatternNode
@@ -25,7 +24,7 @@ type (
 	}
 )
 
-func ChordFromString(s string) (keys.Chord, error) {
+func ChordFromString(s string) (*keys.Chord, error) {
 	keys := keys.NewChord()
 
 	for _, tok := range strings.Fields(s) {
@@ -35,7 +34,7 @@ func ChordFromString(s string) (keys.Chord, error) {
 			return keys, fmt.Errorf("%s: unknown key name", tok)
 		}
 
-		keys[code] = true
+		keys.Add(code)
 	}
 
 	return keys, nil
@@ -45,19 +44,19 @@ func NewPatterns() *Patterns {
 	return new(Patterns)
 }
 
-func (patterns *Patterns) AddSequence(seq keys.Sequence, Command []string) {
+func (patterns *Patterns) AddSequence(seq *keys.Sequence, Command []string) {
 	node := &patterns.PatternNode
 outer:
-	for _, keys := range seq {
+	for _, chord := range seq.Chords() {
 		for _, next := range node.Next {
-			if maps.Equal(next.Chord, keys) {
+			if chord.Equal(next.Chord) {
 				node = next
 				continue outer
 			}
 		}
 
 		p := PatternNode{
-			Chord: keys,
+			Chord: chord,
 		}
 
 		node.Next = append(node.Next, &p)
@@ -68,21 +67,22 @@ outer:
 	node.Command = Command
 }
 
-func (patterns *Patterns) FindSequence(seq keys.Sequence) (*PatternNode, bool, bool) {
+func (patterns *Patterns) FindSequence(seq *keys.Sequence) (*PatternNode, bool, bool) {
 	node := &patterns.PatternNode
+	chords := seq.Chords()
 
-	for len(seq) > 0 {
+	for len(chords) > 0 {
 		for _, next := range node.Next {
-			if maps.Equal(next.Chord, seq[0]) {
+			if next.Chord.Equal(chords[0]) {
 				node = next
-				if len(seq) == 1 && node.Terminal {
+				if len(chords) == 1 && node.Terminal {
 					return node, true, len(node.Next) > 0
 				}
 				break
 			}
 		}
 
-		seq = seq[1:]
+		chords = chords[1:]
 	}
 
 	return nil, false, len(node.Next) > 0
@@ -105,7 +105,7 @@ func (node *PatternNode) RunCommand() error {
 }
 
 func (node *PatternNode) SendKeySequence() error {
-	if len(node.KeySequence) == 0 {
+	if len(node.KeySequence.Chords()) == 0 {
 		return fmt.Errorf("no key sequence")
 	}
 	return nil

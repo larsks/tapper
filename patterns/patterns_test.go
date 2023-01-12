@@ -2,6 +2,7 @@ package patterns
 
 import (
 	"fmt"
+	"tapper/keys"
 	"testing"
 
 	evdev "github.com/holoplot/go-evdev"
@@ -9,7 +10,7 @@ import (
 )
 
 type (
-	SequenceMap map[string]Sequence
+	SequenceMap map[string]*keys.Sequence
 	Expected    struct {
 		name  string
 		found bool
@@ -18,55 +19,55 @@ type (
 )
 
 var sequenceMap = SequenceMap{
-	"ls": {
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	},
-	"rs": {
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	},
-	"lsls": {
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	},
-	"lslsls": {
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	},
-	"lsrsls": {
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	},
-	"rsrsrs": {
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	},
-	"rsls": {
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true},
-	},
-	"lsrs": {
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	},
-	"lsrsrs": {
-		Chord{evdev.KEY_LEFTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	},
-	"rsrs": {
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_RIGHTSHIFT: true},
-	},
-	"chord:lsrs": {
-		Chord{evdev.KEY_LEFTSHIFT: true, evdev.KEY_RIGHTSHIFT: true},
-	},
-	"chord:lsrs:lsrs": {
-		Chord{evdev.KEY_LEFTSHIFT: true, evdev.KEY_RIGHTSHIFT: true},
-		Chord{evdev.KEY_LEFTSHIFT: true, evdev.KEY_RIGHTSHIFT: true},
-	},
+	"ls": keys.NewSequence(
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+	),
+	"rs": keys.NewSequence(
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+	),
+	"lsls": keys.NewSequence(
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+	),
+	"lslsls": keys.NewSequence(
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+	),
+	"lsrsls": keys.NewSequence(
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+	),
+	"rsrsrs": keys.NewSequence(
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+	),
+	"rsls": keys.NewSequence(
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+	),
+	"lsrs": keys.NewSequence(
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+	),
+	"lsrsrs": keys.NewSequence(
+		keys.NewChord(evdev.KEY_LEFTSHIFT),
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+	),
+	"rsrs": keys.NewSequence(
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+		keys.NewChord(evdev.KEY_RIGHTSHIFT),
+	),
+	"chord:lsrs": keys.NewSequence(
+		keys.NewChord(evdev.KEY_LEFTSHIFT, evdev.KEY_RIGHTSHIFT),
+	),
+	"chord:lsrs:lsrs": keys.NewSequence(
+		keys.NewChord(evdev.KEY_LEFTSHIFT, evdev.KEY_RIGHTSHIFT),
+		keys.NewChord(evdev.KEY_LEFTSHIFT, evdev.KEY_RIGHTSHIFT),
+	),
 }
 
 func createPatterns(names ...string) *Patterns {
