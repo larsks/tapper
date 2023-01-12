@@ -202,7 +202,7 @@ func main() {
 	flag.Parse()
 
 	if optVersion {
-		printVersion()
+		version.PrintVersion()
 		return
 	}
 
@@ -242,12 +242,6 @@ func printDevices() {
 			}
 		}
 	}
-}
-
-func printVersion() {
-	fmt.Printf("Version: %s\n", version.Version)
-	fmt.Printf("BuildDate: %s\n", version.BuildDate)
-	fmt.Printf("BuildRef: %s\n", version.BuildRef)
 }
 
 func printKeys() {
