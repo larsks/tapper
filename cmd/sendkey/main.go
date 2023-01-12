@@ -14,8 +14,9 @@ var optRepeat int
 
 var DEFAULT_SEQUENCE []string = []string{
 	"e", "c", "h", "o", "space",
-	"leftshift:t", "leftshift:a", "leftshift:p", "leftshift:p", "leftshift:e", "leftshift:r", "space",
-	"i", "s", "space", "c", "o", "o", "l", "enter",
+	"leftshift:t", "leftshift:a", "leftshift:p",
+	"leftshift:p", "leftshift:e", "leftshift:r", "dot",
+	"enter",
 }
 
 func init() {
