@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"sort"
 
 	"tapper/config"
 	"tapper/patterns"
@@ -245,7 +246,14 @@ func printDevices() {
 }
 
 func printKeys() {
-	for code, key := range evdev.KEYNames {
-		fmt.Printf("[%03d] %s\n", code, key)
+	codes := []int{}
+	for code := range evdev.KEYNames {
+		codes = append(codes, int(code))
+	}
+
+	sort.Ints(codes)
+
+	for _, code := range codes {
+		fmt.Printf("[%03d] %s\n", code, evdev.KEYNames[evdev.EvCode(code)])
 	}
 }
